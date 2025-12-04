@@ -1,0 +1,28 @@
+---
+title: "script"
+output: pdf_document
+date: "2025-12-04"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Exploratory data analysis
+
+
+```{r cars}
+# Load packages
+library(dplyr)
+library(ggplot2)
+```
+
+Exploring the dataset:
+
+```{r}
+dat <- read.csv("student-mat.csv", sep = ";")
+str(dat)
+
+```
+
+
