@@ -17,7 +17,7 @@ library(dplyr)
 library(ggplot2)
 ```
 
-Exploring the dataset:
+Reading in the dataset:
 
 ```{r}
 dat <- read.csv("student-mat.csv", sep = ";")
@@ -25,4 +25,130 @@ str(dat)
 
 ```
 
+Organizing into relevant cols:
 
+
+```{r}
+dat <- dat %>%
+  mutate(
+    sex      = factor(sex),
+    school   = factor(school),
+    address  = factor(address),
+    famsize  = factor(famsize),
+    Pstatus  = factor(Pstatus),
+    internet = factor(internet),
+    romantic = factor(romantic),
+    studytime = factor(
+      studytime,
+      levels = 1:4,
+      labels = c("low", "moderate", "high", "very high")
+    )
+  )
+
+# Basic summary of numeric variables
+summary(select(dat, G1, G2, G3, age, absences))
+
+```
+
+Distribution of math grades?
+
+
+```{r}
+
+ggplot(dat, aes(x = G3)) +
+  geom_histogram(binwidth = 1, boundary = 0, closed = "left") +
+  labs(
+    title = "Distribution of Final Math Grades (G3)",
+    x = "Final grade (0–20)",
+    y = "Number of students"
+  )
+
+```
+
+Grades by gender
+
+```{r}
+
+ggplot(dat, aes(x = sex, y = G3)) +
+  geom_boxplot() +
+  labs(
+    title = "Final Grade (G3) by Sex",
+    x = "Sex",
+    y = "Final grade (G3)"
+  )
+
+```
+
+
+Grades by study time:
+
+
+```{r}
+
+ggplot(dat, aes(x = studytime, y = G3)) +
+  geom_boxplot() +
+  labs(
+    title = "Final Grade (G3) by Study Time Category",
+    x = "Weekly study time",
+    y = "Final grade (G3)"
+  )
+
+```
+
+Relationship between grades at different time points
+
+
+```{r}
+
+#g1
+ggplot(dat, aes(x = G1, y = G3)) +
+  geom_point(alpha = 0.6) +
+  geom_smooth(method = "lm", se = FALSE) +
+  labs(
+    title = "G1 vs G3",
+    x = "First period grade (G1)",
+    y = "Final grade (G3)"
+  )
+
+
+#g2
+ggplot(dat, aes(x = G2, y = G3)) +
+  geom_point(alpha = 0.6) +
+  geom_smooth(method = "lm", se = FALSE) +
+  labs(
+    title = "G2 vs G3",
+    x = "Second period grade (G2)",
+    y = "Final grade (G3)"
+  )
+
+```
+
+
+Relationship between absences and final grade:
+
+
+```{r}
+
+ggplot(dat, aes(x = absences, y = G3)) +
+  geom_point(alpha = 0.6) +
+  geom_smooth(method = "lm", se = FALSE) +
+  labs(
+    title = "Absences vs Final Grade",
+    x = "Number of absences",
+    y = "Final grade (G3)"
+  )
+
+```
+
+Some correlations:
+
+```{r}
+
+num_vars <- dat %>%
+  select(G1, G2, G3, age, absences)
+
+cor(num_vars)
+```
+
+So correlation is very high between G1/G2/G3, this is expected.
+Interestingly absences doesn't seem to have much correlation, and neither does age.
