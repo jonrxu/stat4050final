@@ -1,0 +1,140 @@
+---
+title: "eda"
+output:
+  html_document:
+    df_print: paged
+date: "2025-12-05"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+
+dat <- read.csv("student-mat.csv", sep = ";")
+
+str(dat)
+
+```
+
+
+
+```{r}
+
+# Load packages
+library(dplyr)
+library(ggplot2)
+
+dat <- dat %>%
+  mutate(
+    # Core categorical variables
+    school    = factor(school),
+    sex       = factor(sex),
+    address   = factor(address),
+    famsize   = factor(famsize),
+    Pstatus   = factor(Pstatus),
+
+    # Jobs & reasons
+    Mjob      = factor(Mjob),
+    Fjob      = factor(Fjob),
+    reason    = factor(reason),
+    guardian  = factor(guardian),
+
+    # Supports and activities
+    schoolsup = factor(schoolsup),
+    famsup    = factor(famsup),
+    paid      = factor(paid),
+    activities= factor(activities),
+    nursery   = factor(nursery),
+    higher    = factor(higher),
+    internet  = factor(internet),
+    romantic  = factor(romantic),
+
+    # Study time as ordered-ish factor
+    studytime = factor(
+      studytime,
+      levels = 1:4,
+      labels = c("low", "moderate", "high", "very high")
+    )
+  )
+
+str(dat)
+
+```
+
+
+
+```{r}
+
+ggplot(dat, aes(x = G3)) +
+  geom_histogram(binwidth = 1, boundary = 0, closed = "left") +
+  labs(
+    title = "Distribution of Final Grade (G3)",
+    x = "Final grade (0–20)",
+    y = "Number of students"
+  )
+
+```
+
+
+
+```{r}
+
+# Identify numeric variables
+numeric_vars <- names(dat)[sapply(dat, is.numeric)]
+
+# Remove G3 from the predictor list
+numeric_vars <- setdiff(numeric_vars, "G3")
+
+numeric_vars
+
+```
+
+
+```{r}
+
+for (v in numeric_vars) {
+  p <- ggplot(dat, aes_string(x = v, y = "G3")) +
+    geom_point(alpha = 0.6) +
+    geom_smooth(method = "lm", se = FALSE) +
+    labs(
+      title = paste("Final Grade (G3) vs", v),
+      x = v,
+      y = "Final grade (G3)"
+    )
+  print(p)
+}
+
+```
+
+
+```{r}
+
+# Identify factor / categorical variables
+factor_vars <- names(dat)[sapply(dat, is.factor)]
+
+# Just in case, make sure G3 is not in this list
+factor_vars <- setdiff(factor_vars, "G3")
+
+factor_vars
+
+```
+
+
+```{r}
+
+for (v in factor_vars) {
+  p <- ggplot(dat, aes_string(x = v, y = "G3")) +
+    geom_boxplot() +
+    labs(
+      title = paste("Final Grade (G3) by", v),
+      x = v,
+      y = "Final grade (G3)"
+    )
+  print(p)
+}
+
+
+```
+
