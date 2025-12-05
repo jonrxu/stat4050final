@@ -1,0 +1,114 @@
+---
+title: "regression"
+output: pdf_document
+date: "2025-12-05"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r cars}
+# Load packages
+library(dplyr)
+library(ggplot2)
+```
+
+Reading in the dataset:
+
+```{r}
+dat <- read.csv("student-mat.csv", sep = ";")
+str(dat)
+
+```
+
+
+Convert some variables to factors
+
+```{r}
+dat <- dat %>%
+  mutate(
+    sex      = factor(sex),
+    school   = factor(school),
+    address  = factor(address),
+    famsize  = factor(famsize),
+    Pstatus  = factor(Pstatus),
+    higher   = factor(higher),
+    internet = factor(internet),
+    romantic = factor(romantic),
+    studytime = factor(
+      studytime,
+      levels = 1:4,
+      labels = c("low", "moderate", "high", "very high")
+    )
+  )
+
+```
+
+
+
+model 1 - evaluate G3 just from background, support, behavior, etc
+```{r}
+
+model1 <- lm(
+  G3 ~ sex + age + Medu + Fedu +
+    studytime + failures + absences +
+    higher + goout + Walc + internet,
+  data = dat
+)
+
+summary(model1)
+```
+
+
+
+```{r}
+
+model2 <- lm(G3 ~ G1 + G2, data = dat)
+summary(model2)
+
+```
+
+```{r}
+
+model3_full <- lm(
+  G3 ~ G1 + G2 +
+    sex + age + Medu + Fedu +
+    studytime + failures + absences +
+    higher + goout + Walc + internet,
+  data = dat
+)
+
+summary(model3_full)
+
+
+```
+
+
+
+```{r}
+
+model_step <- step(model3_full, direction = "both", trace = FALSE)
+summary(model_step)
+
+```
+
+```{r}
+
+bin_vars <- c("schoolsup","famsup","paid","activities",
+              "nursery","higher","internet","romantic")
+
+for (v in bin_vars) {
+  cat("\n", v, "\n")
+  print(
+    dat %>%
+      group_by(.data[[v]]) %>%
+      summarise(
+        n = n(),
+        mean_G3 = mean(G3),
+        sd_G3   = sd(G3)
+      )
+  )
+}
+
+```
