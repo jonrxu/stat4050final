@@ -1,0 +1,413 @@
+---
+title: "final"
+output: pdf_document
+date: "2025-12-06"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Setup
+
+```{r}
+
+# Load packages
+library(dplyr)
+library(ggplot2)
+
+```
+
+# Data loading
+
+```{r}
+
+dat <- read.csv("student-mat.csv", sep = ";")
+str(dat)
+
+```
+
+# Data preprocessing
+The data is pretty clean actually from visual inspection, we just need to cast certain categorical variables into numerical with factor().
+
+```{r}
+
+dat <- dat %>%
+  mutate(
+    # Core categorical variables
+    school    = factor(school),
+    sex       = factor(sex),
+    address   = factor(address),
+    famsize   = factor(famsize),
+    Pstatus   = factor(Pstatus),
+
+    # Jobs & reasons
+    Mjob      = factor(Mjob),
+    Fjob      = factor(Fjob),
+    reason    = factor(reason),
+    guardian  = factor(guardian),
+
+    # Supports and activities
+    schoolsup = factor(schoolsup),
+    famsup    = factor(famsup),
+    paid      = factor(paid),
+    activities= factor(activities),
+    nursery   = factor(nursery),
+    higher    = factor(higher),
+    internet  = factor(internet),
+    romantic  = factor(romantic),
+
+    # Study time as ordered-ish factor
+    studytime = factor(
+      studytime,
+      levels = 1:4,
+      labels = c("low", "moderate", "high", "very high")
+    )
+  )
+
+str(dat)
+
+```
+
+# Exploratory Data Analysis
+Now we move onto inspecting the data and seeing how different variables look. Firstly, let's look at the grade distribution for the final math grade:
+
+```{r}
+
+ggplot(dat, aes(x = G3)) +
+  geom_histogram(binwidth = 1, boundary = 0, closed = "left", color = "black", fill = "lightgray") +
+  labs(
+    title = "Distribution of Final Grade (G3)",
+    x = "Final grade (0–20)",
+    y = "Number of students"
+  )
+
+```
+
+Observing distributions of some numeric variables like age, absences, failures.
+
+```{r}
+
+ggplot(dat, aes(x = age)) +
+  geom_histogram(
+    binwidth = 1,
+    boundary = 0,
+    color = "black",
+    fill = "lightgray"
+  ) +
+  labs(
+    title = "Distribution of Age",
+    x = "Age (years)",
+    y = "Count"
+  )
+
+
+```
+
+```{r}
+
+ggplot(dat, aes(x = absences)) +
+  geom_histogram(
+    binwidth = 2,
+    boundary = 0,
+    color = "black",
+    fill = "lightgray"
+  ) +
+  labs(
+    title = "Distribution of Absences",
+    x = "Number of School Absences",
+    y = "Count"
+  )
+
+```
+
+```{r}
+
+ggplot(dat, aes(x = failures)) +
+  geom_histogram(
+    binwidth = 1,
+    boundary = 0,
+    color = "black",
+    fill = "lightgray"
+  ) +
+  labs(
+    title = "Distribution of Past Failures",
+    x = "Number of Past Failures",
+    y = "Count"
+  )
+
+```
+
+Now to contrast the final grade with some of the variables of interest.
+
+```{r}
+
+ggplot(dat, aes(x = absences, y = G3)) +
+  geom_point(alpha = 0.5) +
+  geom_smooth(method = "lm", se = FALSE, color = "blue") +
+  labs(
+    title = "Final Grade (G3) vs Absences",
+    x = "Number of School Absences",
+    y = "Final Grade (G3)"
+  )
+
+```
+
+Adding some jitter for a better visual understanding of the quantity of different data points.
+
+```{r}
+
+ggplot(dat, aes(x = absences, y = G3)) +
+  geom_jitter(width = 0.4, alpha = 0.4) +
+  geom_smooth(method = "lm", se = FALSE, color = "blue") +
+  labs(
+    title = "Final Grade (G3) vs Absences (Jittered)",
+    x = "Number of School Absences",
+    y = "Final Grade (G3)"
+  )
+
+```
+
+We can also visually show the disparities between different categorical groups with a box plot.
+
+```{r}
+
+dat <- dat %>%
+  mutate(abs_bin = cut(
+    absences,
+    breaks = c(-1, 0, 5, 10, 20, 100),
+    labels = c("0", "1–5", "6–10", "11–20", "20+")
+  ))
+
+ggplot(dat, aes(x = abs_bin, y = G3)) +
+  geom_boxplot(fill = "lightgray") +
+  labs(
+    title = "Final Grade (G3) by Absence Category",
+    x = "Absence Range",
+    y = "Final Grade (G3)"
+  )
+
+```
+
+
+Let's look at other variables like study time:
+
+
+```{r}
+
+# Normal box plot
+ggplot(dat, aes(x = studytime, y = G3)) +
+  geom_boxplot(fill = "lightgray") +
+  labs(
+    title = "Final Grade (G3) by Study Time Category",
+    x = "Weekly Study Time",
+    y = "Final Grade (G3)"
+  )
+
+# Box plot including the jittered data points overlaid
+ggplot(dat, aes(x = studytime, y = G3)) +
+  geom_boxplot(fill = "lightgray", outlier.shape = NA) +
+  geom_jitter(width = 0.15, alpha = 0.4) +
+  labs(
+    title = "Final Grade (G3) by Study Time Category",
+    x = "Weekly Study Time",
+    y = "Final Grade (G3)"
+  )
+
+```
+
+
+And also variables like reason for doing school:
+
+
+```{r}
+
+ggplot(dat, aes(x = reason, y = G3)) +
+  geom_boxplot(fill = "lightgray") +
+  labs(
+    title = "Final Grade (G3) by Reason for Choosing School",
+    x = "Reason for Choosing School",
+    y = "Final Grade (G3)"
+  ) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+
+```
+
+Family relations:
+
+```{r}
+
+ggplot(dat, aes(x = factor(famrel), y = G3)) +
+  geom_boxplot(fill = "lightgray") +
+  labs(
+    title = "Final Grade (G3) by Family Relationship Quality",
+    x = "Family Relationship Quality (1 = very bad, 5 = excellent)",
+    y = "Final Grade (G3)"
+  )
+
+```
+
+
+A few more binary variables of interest like whether they want to pursue higher education, Internet access, rural/urban, and whether they have a romantic relationship.
+
+
+```{r}
+
+ggplot(dat, aes(x = higher, y = G3)) +
+  geom_boxplot(fill = "lightgray", outlier.shape = NA) +
+  geom_jitter(width = 0.1, alpha = 0.4) +
+  labs(
+    title = "Final Grade (G3) by Intention to Pursue Higher Education",
+    x = "Wants to Pursue Higher Education",
+    y = "Final Grade (G3)"
+  )
+
+
+```
+
+```{r}
+
+ggplot(dat, aes(x = internet, y = G3)) +
+  geom_boxplot(fill = "lightgray", outlier.shape = NA) +
+  geom_jitter(width = 0.1, alpha = 0.4) +
+  labs(
+    title = "Final Grade (G3) by Home Internet Access",
+    x = "Home Internet Access",
+    y = "Final Grade (G3)"
+  )
+
+```
+
+```{r}
+
+ggplot(dat, aes(x = address, y = G3)) +
+  geom_boxplot(fill = "lightgray", outlier.shape = NA) +
+  geom_jitter(width = 0.1, alpha = 0.4) +
+  labs(
+    title = "Final Grade (G3) by Home Address Type",
+    x = "Home Address (U = Urban, R = Rural)",
+    y = "Final Grade (G3)"
+  )
+
+```
+
+```{r}
+
+ggplot(dat, aes(x = romantic, y = G3)) +
+  geom_boxplot(fill = "lightgray", outlier.shape = NA) +
+  geom_jitter(width = 0.1, alpha = 0.4) +
+  labs(
+    title = "Final Grade (G3) by Romantic Relationship Status",
+    x = "In a Romantic Relationship",
+    y = "Final Grade (G3)"
+  )
+
+```
+
+Also let's do a scatter plot analysis between G1 and G2, because this is the few strictly numeric vs numeric comparisons we have:
+
+```{r}
+
+ggplot(dat, aes(x = G1, y = G3)) +
+  geom_jitter(width = 0.2, height = 0.2, alpha = 0.5) +
+  geom_smooth(method = "lm", se = FALSE, color = "blue") +
+  labs(
+    title = "Final Grade (G3) vs First Period Grade (G1)",
+    x = "First Period Grade (G1)",
+    y = "Final Grade (G3)"
+  )
+
+
+ggplot(dat, aes(x = G2, y = G3)) +
+  geom_jitter(width = 0.2, height = 0.2, alpha = 0.5) +
+  geom_smooth(method = "lm", se = FALSE, color = "blue") +
+  labs(
+    title = "Final Grade (G3) vs Second Period Grade (G2)",
+    x = "Second Period Grade (G2)",
+    y = "Final Grade (G3)"
+  )
+
+```
+
+So it looks like we have many variables that do show pretty big gaps in performance between different categorical groups. Now let's turn to exploring some regressions to see if we can quantify these relationships with the final math grade.
+
+# Regressions
+
+We'll reuse `dat` from above and fit several linear regression models
+
+## Model 1: Background and behavior only (no prior grades)
+
+Here we first focus on non-grade predictors to see how demographics, family background, and behaviors relate to the final grade, without using G1 or G2.
+
+```{r}
+
+model1 <- lm(
+  G3 ~ sex + age + Medu + Fedu +
+    studytime + failures + absences +
+    higher + goout + Walc + internet,
+  data = dat
+)
+
+summary(model1)
+
+```
+
+## Model 2: Prior grades only (G1 and G2)
+
+```{r}
+
+model2 <- lm(G3 ~ G1 + G2, data = dat)
+summary(model2)
+
+```
+
+## Model 3: Combined model (prior grades + background and behavior)
+
+```{r}
+
+model3_full <- lm(
+  G3 ~ G1 + G2 +
+    sex + age + Medu + Fedu +
+    studytime + failures + absences +
+    higher + goout + Walc + internet,
+  data = dat
+)
+
+summary(model3_full)
+
+```
+
+## Stepwise model
+
+```{r}
+
+model_step <- step(model3_full, direction = "both", trace = FALSE)
+summary(model_step)
+```
+
+## Comparing the models
+
+To summarize how much each model explains, we can extract the R^2 and adjusted R^2 values:
+
+```{r}
+
+get_fit <- function(mod) {
+  s <- summary(mod)
+  data.frame(
+    R2 = s$r.squared,
+    Adj_R2 = s$adj.r.squared
+  )
+}
+
+model_fits <- rbind(
+  Model1_no_grades   = get_fit(model1),
+  Model2_grades_only = get_fit(model2),
+  Model3_full        = get_fit(model3_full),
+  Model_stepwise     = get_fit(model_step)
+)
+
+model_fits
+
+```
+
