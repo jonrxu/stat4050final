@@ -22,16 +22,18 @@ library(ggplot2)
 
 ```{r}
 
+# read math dataset (395 students, 33 vars)
 dat <- read.csv("student-mat.csv", sep = ";")
-str(dat)
+str(dat) # inspect structure and variable types
 
 ```
 
 # Data preprocessing
-The data is pretty clean actually from visual inspection, we just need to cast certain categorical variables into numerical with factor().
+The data is pretty clean actually from visual inspection, we just need to cast certain variables into categorical with factor().
 
 ```{r}
 
+# Convert character/binary variables to factors and recode studytime as an ordered factor
 dat <- dat %>%
   mutate(
     # Core categorical variables
@@ -171,7 +173,7 @@ ggplot(dat, aes(x = absences, y = G3)) +
 We can also visually show the disparities between different categorical groups with a box plot.
 
 ```{r}
-
+# create categorical absence bins for boxplot comparison
 dat <- dat %>%
   mutate(abs_bin = cut(
     absences,
@@ -234,7 +236,7 @@ ggplot(dat, aes(x = reason, y = G3)) +
 
 ```
 
-Family relations:
+Family relations, rated from 0 (very bad) to 5 (excellent):
 
 ```{r}
 
@@ -305,9 +307,11 @@ ggplot(dat, aes(x = romantic, y = G3)) +
 
 ```
 
-Also let's do a scatter plot analysis between G1 and G2, because this is the few strictly numeric vs numeric comparisons we have:
+Also let's do a scatter plot analysis between G1/G2 and G3, because this is the few strictly numeric vs numeric comparisons we have:
 
 ```{r}
+
+# Relationship between G3 and earlier period grades G1 and G2
 
 ggplot(dat, aes(x = G1, y = G3)) +
   geom_jitter(width = 0.2, height = 0.2, alpha = 0.5) +
@@ -341,6 +345,8 @@ We'll reuse `dat` from above and fit several linear regression models
 Here we first focus on non-grade predictors to see how demographics, family background, and behaviors relate to the final grade, without using G1 or G2.
 
 ```{r}
+# Model 1: background and behavior only (no prior grades)
+# Goal: see how non-grade factors relate to G3 on their own
 
 model1 <- lm(
   G3 ~ sex + age + Medu + Fedu +
@@ -352,19 +358,24 @@ model1 <- lm(
 summary(model1)
 
 ```
+Model 1 shows that background and behavioral variables explain only a modest amount of variation in final grades (adjusted R^2 ~~ 0.17). The strongest predictors are the number of past failures (negative effect), gender (males scoring slightly higher), and going out with friends (slightly negative effect). Most other variables, including parental education and study time, show weak or non-significant associations.
 
 ## Model 2: Prior grades only (G1 and G2)
 
 ```{r}
+# Model 2: prior grades only
+# Goal: quantify how well G1 and G2 alone predict the final grade
 
 model2 <- lm(G3 ~ G1 + G2, data = dat)
 summary(model2)
 
 ```
+Model 2 demonstrates that prior grades (G1 and G2) are extremely strong predictors of final grade, explaining over 80% of the variation in G3. Both earlier grades are significant, with G2 having the largest effect. This indicates that most of a student’s final performance is already reflected in their prior achievement.
 
 ## Model 3: Combined model (prior grades + background and behavior)
 
 ```{r}
+# Model 3: full model combining prior grades + background/behavior variables
 
 model3_full <- lm(
   G3 ~ G1 + G2 +
@@ -378,19 +389,26 @@ summary(model3_full)
 
 ```
 
+Model 3 combines prior grades with background and behavioral factors. The adjusted R^2 rises only slightly compared to Model 2, meaning the additional predictors add little explanatory value once G1 and G2 are included. G1 and G2 remain dominant predictors, while nearly all other variables become non-significant.
+
 ## Stepwise model
 
 ```{r}
 
+# Stepwise model: use AIC-based selection to find a simpler subset of predictors
+
 model_step <- step(model3_full, direction = "both", trace = FALSE)
 summary(model_step)
 ```
+
+The stepwise model retains a small subset of predictors—primarily G1, G2, and a few minor variables, while achieving nearly the same fit as the full model. This confirms that most predictors contribute very little beyond prior grades and that a simpler model performs equally well.
 
 ## Comparing the models
 
 To summarize how much each model explains, we can extract the R^2 and adjusted R^2 values:
 
 ```{r}
+# Compare model fits (how much variation each model explains)
 
 get_fit <- function(mod) {
   s <- summary(mod)
@@ -411,3 +429,4 @@ model_fits
 
 ```
 
+Comparing all models, non-grade factors alone explain little, prior grades explain most of the variation, and adding extra variables yields minimal improvement. This highlights that previous academic performance is by far the strongest indicator of final math achievement.
